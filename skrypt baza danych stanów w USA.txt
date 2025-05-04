@@ -1,0 +1,44 @@
+import sqlite3
+import pandas as pd
+
+# Wczytanie danych z plików CSV
+stations_df = pd.read_csv('clean_stations.csv')
+measure_df = pd.read_csv('clean_measure.csv')
+
+# Załóżmy, że w plikach masz kolumny: 'state', 'area_km2', 'population'
+# Jeśli nazwy są inne, dostosuj je odpowiednio
+
+# Połącz dane na podstawie stanu
+# Jeśli dane są już w osobnych plikach, można je połączyć na podstawie kolumny 'state'
+# Przyjmuję, że 'stations_df' zawiera kolumny 'state', 'area_km2', 'population'
+
+# Utwórz połączenie z bazą danych
+conn = sqlite3.connect('conflicts_us.db')
+
+# Utwórz tabelę
+conn.execute('''
+CREATE TABLE IF NOT EXISTS states (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    state TEXT UNIQUE,
+    area_km2 REAL,
+    population INTEGER
+)
+''')
+
+# Wstaw dane do tabeli
+for _, row in stations_df.iterrows():
+    conn.execute('''
+    INSERT OR REPLACE INTO states (state, area_km2, population)
+    VALUES (?, ?, ?)
+    ''', (row['state'], row['area_km2'], row['population']))
+
+# Zatwierdź zmiany
+conn.commit()
+
+# Przykład zapytania
+results = conn.execute("SELECT * FROM states LIMIT 5").fetchall()
+for row in results:
+    print(row)
+
+# Zamknij połączenie
+conn.close()
